@@ -199,6 +199,7 @@ function filterTable(query) {
 }
 
 // --- Graph Visualization (Vis.js) ---
+// --- Graph Visualization (Vis.js) ---
 function renderGraph(whales) {
     const container = document.getElementById('whale-graph');
     if (!container) return;
@@ -207,59 +208,89 @@ function renderGraph(whales) {
     const edges = [];
 
     whales.forEach(whale => {
-        // Whale Node
+        // Whale Node (Icon)
         const address = whale.address || 'Unknown';
         const whaleId = `w_${address}`;
+
+        // Size node based on wins (min 20, max 40)
+        const size = Math.min(40, Math.max(20, (whale.contrarian_wins || 0) * 2));
+
         nodes.push({
             id: whaleId,
             label: `Whale\n${address.substring(0, 4)}...`,
-            shape: 'dot',
-            color: '#f59e0b',
-            size: 20,
-            font: { color: '#000', size: 12, face: 'Inter' }
+            shape: 'icon',
+            icon: {
+                face: "'Font Awesome 6 Free'",
+                code: '\uf6f1', // fa-user-astronaut or similar whale concept? Let's use fa-crown f521 or fa-user f007
+                weight: '900', // Solid
+                size: 40,
+                color: '#f59e0b'
+            },
+            font: { color: '#374151', size: 12, face: 'Inter', multi: true, vadjust: 0 },
+            title: `Wins: ${whale.contrarian_wins}\nWin Rate: ${(whale.win_rate * 100).toFixed(0)}%` // Tooltip
         });
 
-        // Profit Node (Simulated target for the edge)
+        // Profit Node (Target)
         const profitId = `p_${whale.address}`;
+        const isProfitable = (whale.profit || 0) > 0;
+
         nodes.push({
             id: profitId,
-            label: `Profit: ${formatCurrency(whale.profit)}`,
-            shape: 'box',
-            color: '#e5e7eb',
-            font: { size: 10, face: 'Inter' }
+            label: `\n${formatCurrency(whale.profit)}`,
+            shape: 'icon',
+            icon: {
+                face: "'Font Awesome 6 Free'",
+                code: '\uf1c0', // fa-database or fa-sack-dollar f81d
+                weight: '900',
+                size: 30,
+                color: isProfitable ? '#10b981' : '#ef4444'
+            },
+            font: { color: isProfitable ? '#059669' : '#b91c1c', size: 12, face: 'Inter', vadjust: -5 }
         });
 
         edges.push({
             from: whaleId,
             to: profitId,
-            arrows: 'to',
-            length: 150,
-            color: { color: '#cbd5e1' }
+            arrows: {
+                to: { enabled: true, scaleFactor: 0.5 }
+            },
+            dashes: true,
+            color: { color: '#94a3b8', highlight: '#4f46e5' },
+            width: 1,
+            length: 200
         });
     });
 
     // Configuration
     const options = {
         nodes: {
-            borderWidth: 1,
-            shadow: true
-        },
-        edges: {
-            width: 1,
-            smooth: {
-                type: 'cubicBezier',
-                forceDirection: 'horizontal'
+            borderWidth: 0,
+            shadow: {
+                enabled: true,
+                color: 'rgba(0,0,0,0.1)',
+                size: 10,
+                x: 0,
+                y: 5
             }
         },
         layout: {
             hierarchical: {
                 direction: 'LR',
                 sortMethod: 'directed',
-                levelSeparation: 150
+                levelSeparation: 250,
+                nodeSpacing: 100
             }
         },
-        physics: false,
+        physics: {
+            enabled: true,
+            hierarchicalRepulsion: {
+                nodeDistance: 120,
+                springLength: 200,
+                damping: 0.1
+            }
+        },
         interaction: {
+            hover: true,
             dragNodes: true,
             zoomView: true,
             dragView: true
@@ -267,6 +298,25 @@ function renderGraph(whales) {
     };
 
     network = new vis.Network(container, { nodes, edges }, options);
+
+    // Interaction Events
+    network.on('click', (params) => {
+        if (params.nodes.length > 0) {
+            handleNodeClick(params.nodes[0], whales);
+        } else {
+            closePanel();
+        }
+    });
+
+    // Fit to view
+    network.once('afterDrawing', () => {
+        network.fit({
+            animation: {
+                duration: 1000,
+                easingFunction: 'easeInOutQuad'
+            }
+        });
+    });
 }
 
 // --- Utilities ---
@@ -287,4 +337,83 @@ function formatDate(dateStr) {
     } catch {
         return dateStr;
     }
+}
+
+// --- Interaction Logic ---
+function handleNodeClick(nodeId, whales) {
+    const panel = document.getElementById('details-panel');
+    const content = document.getElementById('panelContent');
+    const title = document.getElementById('panelTitle');
+
+    if (!panel || !content) return;
+
+    if (nodeId.startsWith('w_')) {
+        const address = nodeId.substring(2);
+        const whale = whales.find(w => w.address === address);
+
+        if (whale) {
+            if (title) title.textContent = "Whale Analysis";
+            content.innerHTML = generateWhaleInsights(whale);
+            panel.classList.remove('hidden');
+        }
+    } else {
+        closePanel();
+    }
+}
+
+function closePanel() {
+    const panel = document.getElementById('details-panel');
+    if (panel) panel.classList.add('hidden');
+    if (network) network.unselectAll();
+}
+window.closePanel = closePanel;
+
+function generateWhaleInsights(whale) {
+    // Mock logic for Alpha Signal
+    let signal = { market: "Unknown", outcome: "N/A", price: "$0.00" };
+    const strat = (whale.strategies && whale.strategies[0]) || "";
+
+    if (strat.includes("Fading")) {
+        signal = { market: "Will Biden Resign?", outcome: "NO", price: "$0.45" };
+    } else if (strat.includes("Crypto")) {
+        signal = { market: "Bitcoin > $100k in 2024", outcome: "NO", price: "$0.32" };
+    } else {
+        signal = { market: "US Election Winner 2028", outcome: "Newsom", price: "$0.12" };
+    }
+
+    return `
+        <div class="insight-section">
+            <div class="whale-stat-grid">
+                <div class="stat-box">
+                    <div class="stat-label">Win Rate</div>
+                    <div class="stat-val">${(whale.win_rate * 100).toFixed(0)}%</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Profit</div>
+                    <div class="stat-val text-green">${formatCurrency(whale.profit)}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="insight-section">
+            <h4><i class="fa-solid fa-bullseye"></i> Alpha Signal</h4>
+            <div class="signal-card">
+                <div class="signal-header"><i class="fa-solid fa-bolt"></i> Strong Buy</div>
+                <div class="signal-market">"${signal.market}"</div>
+                <div class="signal-meta">
+                    <span class="badge" style="background:#dcfce7;color:#166534">Outcome: ${signal.outcome}</span>
+                    <span style="font-size:11px; margin-left:8px;">Entry: ${signal.price}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="insight-section">
+            <h4><i class="fa-solid fa-layer-group"></i> Context</h4>
+            <p style="font-size:12px;color:var(--text-secondary);line-height:1.5">
+                <strong>${strat || 'General'} Strategy</strong>:<br>
+                Typically enters positions when sentiment > 80% but volume is low. 
+                Recent activity suggests accumulation of positions on high-volatility events.
+            </p>
+        </div>
+    `;
 }
