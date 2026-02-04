@@ -51,7 +51,9 @@
                     </div>
                     <button class="btn btn-primary" id="refreshBtn"><i class="fa-solid fa-sync"></i> Refresh
                         Data</button>
-                    <button class="btn btn-icon"><i class="fa-solid fa-ellipsis"></i></button>
+                    <!-- Info Button -->
+                    <button class="btn btn-icon" onclick="toggleInfo()" title="About Arānea"><i
+                            class="fa-solid fa-circle-question"></i></button>
                 </div>
             </header>
 
@@ -72,7 +74,29 @@
                             <span class="legend-item"><span class="dot market"></span> Market</span>
                         </div>
                     </div>
+
                     <div id="whale-graph" class="graph-canvas"></div>
+
+                    <!-- Info Modal (Hidden) -->
+                    <div id="info-modal" class="info-modal hidden">
+                        <div class="info-content">
+                            <h3><i class="fa-solid fa-network-wired"></i> About Arānea</h3>
+                            <p><strong>Arānea</strong> monitors PolyMarket for "Contrarian Whales" — high-net-worth
+                                traders betting against the crowd (e.g., betting 'NO' when adjacent probability > 85%).
+                            </p>
+                            <ul>
+                                <li><i class="fa-solid fa-user-astronaut" style="color:#f59e0b"></i>
+                                    <strong>Whales</strong>: Smart money wallets.</li>
+                                <li><i class="fa-solid fa-building-columns" style="color:#6366f1"></i> <strong>Market
+                                        Hubs</strong>: High-volume events linking whales.</li>
+                                <li><i class="fa-solid fa-arrow-right-long" style="color:#94a3b8"></i>
+                                    <strong>Lines</strong>: Represent active 'NO' positions.</li>
+                            </ul>
+                            <div class="info-footer">
+                                <button class="btn btn-primary btn-full" onclick="toggleInfo()">Got it</button>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- Floating Stats Overlay -->
                     <div class="stats-overlay">
@@ -83,6 +107,17 @@
                         <div class="overlay-card">
                             <div class="card-label">Active Whales</div>
                             <div class="card-value" id="activeWhales">-</div>
+                        </div>
+                    </div>
+
+                    <!-- Details Panel (Slide-out) -->
+                    <div id="details-panel" class="details-panel hidden">
+                        <div class="panel-head">
+                            <h3 id="panelTitle">Whale Analysis</h3>
+                            <button class="close-btn" onclick="closePanel()"><i class="fa-solid fa-times"></i></button>
+                        </div>
+                        <div id="panelContent" class="panel-body">
+                            <!-- Dynamic Content -->
                         </div>
                     </div>
                 </section>
@@ -96,6 +131,8 @@
                                     id="contrarianCount">0</span></div>
                             <div class="tab" onclick="switchTab('whales')"><i class="fa-solid fa-crown"></i> Whale
                                 Leaderboard</div>
+                            <div class="tab" onclick="switchTab('news')"><i class="fa-solid fa-bolt"></i> Live Feed
+                            </div>
                         </div>
                         <div class="table-actions">
                             <input type="text" class="search-input" placeholder="Search...">
@@ -141,8 +178,24 @@
                             </table>
                         </div>
 
+                        <!-- News Feed -->
+                        <div id="view-news" class="view-panel hidden" style="padding:0;">
+                            <div class="news-feed" id="newsFeed">
+                                <!-- News Items Injected Here -->
+                                <div class="news-placeholder">
+                                    <i class="fa-solid fa-circle-notch fa-spin"></i> Loading live feed...
+                                </div>
+                            </div>
+                        </div>
+
                         <div id="loading" class="loading-state hidden">
                             <i class="fa-solid fa-spinner fa-spin"></i> Loading Data...
+                        </div>
+
+                        <div id="empty-state" class="empty-state hidden">
+                            <div class="empty-icon"><i class="fa-solid fa-wind"></i></div>
+                            <h3>No Opportunities Found</h3>
+                            <p>Try adjusting your filters or check back later.</p>
                         </div>
                     </div>
                 </section>
@@ -150,7 +203,7 @@
         </main>
     </div>
 
-    <!-- Hidden Controls for Logic Adapter (to keep script.js happy) -->
+    <!-- Hidden Controls for Logic Adapter -->
     <div style="display:none;">
         <input id="yesThreshold" value="0.40">
         <input id="volumeThreshold" value="10000">
