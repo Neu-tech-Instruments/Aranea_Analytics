@@ -130,35 +130,37 @@ def find_contrarian_whales(category_name="Politics"):
     ]
     return pd.DataFrame(top_whales)
 
-# Run the scanner
-df_opps = get_contrarian_candidates()
-
-print("=" * 80)
-print("POLYMARKET CONTRARIAN SCANNER")
-print("=" * 80)
-print(f"\nFound {len(df_opps)} contrarian opportunities (Yes > 85%, Volume > $50k)\n")
-
-if len(df_opps) > 0:
-    print("Top Potential Contrarian Plays:")
-    print("-" * 80)
-    for idx, row in df_opps.head(10).iterrows():
-        print(f"\n📊 {row['category']}")
-        print(f"❓ {row['question']}")
-        print(f"📈 Yes Odds: {row['yes_odds']:.2%} | Contrarian Bet: {row['contrarian_bet']}")
-        print(f"💰 Implied Reward: {row['implied_reward']}x")
-        print(f"🔗 Market ID: {row['market_id']}")
-else:
-    print("⚠️  No contrarian opportunities found with current criteria.")
-    print("\nTip: Try adjusting the threshold (currently Yes > 85% and Volume > $50k)")
-
-# Run whale analysis
-print("\n" + "=" * 80)
-print("WHALE WALLET TRACKER")
-print("=" * 80 + "\n")
-df_whales = find_contrarian_whales("Politics")
-if len(df_whales) > 0:
-    print("\n📊 Top Contrarian Whales:\n")
-    for idx, whale in df_whales.iterrows():
-        print(f"🐋 {whale['Wallet']}")
-        print(f"   Strategy: {whale['Strategy']}")
-        print(f"   💰 Total Profit: {whale['Profit']}\n")
+if __name__ == "__main__":
+    # Run the scanner
+    df_opps = get_contrarian_candidates()
+    
+    print("=" * 80)
+    print("POLYMARKET CONTRARIAN SCANNER")
+    print("=" * 80)
+    print(f"\nFound {len(df_opps)} contrarian opportunities (Yes > 85%, Volume > $50k)\n")
+    
+    if len(df_opps) > 0:
+        print("Top Potential Contrarian Plays:")
+        print("-" * 80)
+        for idx, row in df_opps.head(10).iterrows():
+            print(f"\n📊 {row['category']}")
+            print(f"❓ {row['question']}")
+            # Use yes_price instead of yes_odds
+            print(f"📈 Yes Odds: {row['yes_price']:.2%} | Contrarian Bet: {row.get('outcome', 'NO')}")
+            print(f"💰 Implied Reward: {row['implied_reward']}x")
+            print(f"🔗 Market ID: {row['market_id']}")
+    else:
+        print("⚠️  No contrarian opportunities found with current criteria.")
+        print("\nTip: Try adjusting the threshold (currently Yes > 85% and Volume > $5k)")
+    
+    # Run whale analysis
+    print("\n" + "=" * 80)
+    print("WHALE WALLET TRACKER")
+    print("=" * 80 + "\n")
+    df_whales = find_contrarian_whales("Politics")
+    if len(df_whales) > 0:
+        print("\n📊 Top Contrarian Whales:\n")
+        for idx, whale in df_whales.iterrows():
+            print(f"🐋 {whale['Wallet']}")
+            print(f"   Strategy: {whale['Strategy']}")
+            print(f"   💰 Total Profit: {whale['Profit']}\n")
