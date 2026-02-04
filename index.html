@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arānea | Data Lineage</title>
+    <title>Arānea | Pipeline View</title>
     <!-- Inter Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <!-- Vis.js -->
@@ -20,16 +20,12 @@
         <!-- Sidebar -->
         <nav class="sidebar">
             <div class="sidebar-top">
-                <div class="brand-icon"><i class="fa-solid fa-spider"></i></div>
-                <div class="nav-item active"><i class="fa-solid fa-share-nodes"></i></div>
-                <div class="nav-item"><i class="fa-solid fa-folder"></i></div>
-                <div class="nav-item"><i class="fa-solid fa-bell"></i></div>
+                <div class="brand-icon"><i class="fa-solid fa-layer-group"></i></div>
+                <div class="nav-item active"><i class="fa-solid fa-code-branch"></i></div>
+                <div class="nav-item"><i class="fa-solid fa-box-archive"></i></div>
             </div>
             <div class="sidebar-bottom">
-                <div class="nav-item"><i class="fa-solid fa-gear"></i></div>
-                <div class="user-avatar">
-                    <span>RN</span>
-                </div>
+                <div class="user-avatar"><span>RN</span></div>
             </div>
         </nav>
 
@@ -39,85 +35,68 @@
             <header class="top-bar">
                 <div class="breadcrumbs">
                     <span class="crumb-icon"><i class="fa-solid fa-diagram-project"></i></span>
-                    <span class="crumb">Market Analysis</span>
+                    <span class="crumb">Pipeline Builder</span>
                     <span class="crumb-separator">/</span>
-                    <span class="crumb highlight">Polymarket Live Lineage</span>
-                    <i class="fa-regular fa-star action-icon"></i>
+                    <span class="crumb highlight">Polymarket Strategy Flow</span>
                 </div>
                 <div class="actions">
-                    <div class="action-group">
-                        <span class="status-indicator online"></span>
-                        <span class="status-text target-count" id="marketCount">0 Markets</span>
-                    </div>
-                    <button class="btn btn-primary" id="refreshBtn"><i class="fa-solid fa-sync"></i> Refresh
-                        Data</button>
-                    <!-- Info Button -->
-                    <button class="btn btn-icon" onclick="toggleInfo()" title="About Arānea"><i
-                            class="fa-solid fa-circle-question"></i></button>
+                    <button class="btn btn-outline" id="refreshBtn"><i class="fa-solid fa-sync"></i> Refresh</button>
+                    <button class="btn btn-primary" onclick="toggleInfo()"><i class="fa-solid fa-save"></i>
+                        Save</button>
                 </div>
             </header>
 
             <!-- Workspace (Split Pane) -->
             <div class="workspace">
-                <!-- Top: Graph Canvas -->
-                <section class="graph-pane">
-                    <div class="pane-toolbar">
-                        <div class="tool-group">
-                            <button class="tool-btn active" title="Select"><i
-                                    class="fa-solid fa-arrow-pointer"></i></button>
-                            <button class="tool-btn" title="Pan"><i class="fa-solid fa-hand"></i></button>
-                            <div class="separator"></div>
-                            <button class="tool-btn" title="Layout"><i class="fa-solid fa-bezier-curve"></i></button>
-                        </div>
-                        <div class="legend">
-                            <span class="legend-item"><span class="dot whale"></span> Whale</span>
-                            <span class="legend-item"><span class="dot market"></span> Market</span>
-                        </div>
-                    </div>
+                <!-- Top: Graph Canvas + Right Sidebar -->
+                <section class="graph-pane-container">
 
-                    <div id="whale-graph" class="graph-canvas"></div>
-
-                    <!-- Info Modal (Hidden) -->
-                    <div id="info-modal" class="info-modal hidden">
-                        <div class="info-content">
-                            <h3><i class="fa-solid fa-network-wired"></i> About Arānea</h3>
-                            <p><strong>Arānea</strong> monitors PolyMarket for "Contrarian Whales" — high-net-worth
-                                traders betting against the crowd (e.g., betting 'NO' when adjacent probability > 85%).
-                            </p>
-                            <ul>
-                                <li><i class="fa-solid fa-user-astronaut" style="color:#f59e0b"></i>
-                                    <strong>Whales</strong>: Smart money wallets.</li>
-                                <li><i class="fa-solid fa-building-columns" style="color:#6366f1"></i> <strong>Market
-                                        Hubs</strong>: High-volume events linking whales.</li>
-                                <li><i class="fa-solid fa-arrow-right-long" style="color:#94a3b8"></i>
-                                    <strong>Lines</strong>: Represent active 'NO' positions.</li>
-                            </ul>
-                            <div class="info-footer">
-                                <button class="btn btn-primary btn-full" onclick="toggleInfo()">Got it</button>
+                    <!-- Graph Area -->
+                    <div class="graph-area">
+                        <div class="pane-toolbar floating-left">
+                            <div class="tool-group">
+                                <button class="tool-btn active" title="Select"><i
+                                        class="fa-solid fa-arrow-pointer"></i></button>
+                                <button class="tool-btn" title="Pan"><i class="fa-solid fa-hand"></i></button>
+                                <button class="tool-btn" title="Eraser"><i class="fa-solid fa-eraser"></i></button>
                             </div>
                         </div>
+                        <div id="whale-graph" class="graph-canvas"></div>
+
+                        <!-- Details Panel (Slide-out) -->
+                        <div id="details-panel" class="details-panel hidden">
+                            <div class="panel-head">
+                                <h3 id="panelTitle">Details</h3>
+                                <button class="close-btn" onclick="closePanel()"><i
+                                        class="fa-solid fa-times"></i></button>
+                            </div>
+                            <div id="panelContent" class="panel-body"></div>
+                        </div>
                     </div>
 
-                    <!-- Floating Stats Overlay -->
-                    <div class="stats-overlay">
-                        <div class="overlay-card">
-                            <div class="card-label">Total Volume</div>
-                            <div class="card-value" id="totalVolume">-</div>
+                    <!-- Right Sidebar (Legend) -->
+                    <div class="right-sidebar">
+                        <div class="sidebar-header">
+                            <h3>Legend</h3>
+                            <button class="btn-icon small"><i class="fa-solid fa-chevron-up"></i></button>
                         </div>
-                        <div class="overlay-card">
-                            <div class="card-label">Active Whales</div>
-                            <div class="card-value" id="activeWhales">-</div>
-                        </div>
-                    </div>
-
-                    <!-- Details Panel (Slide-out) -->
-                    <div id="details-panel" class="details-panel hidden">
-                        <div class="panel-head">
-                            <h3 id="panelTitle">Whale Analysis</h3>
-                            <button class="close-btn" onclick="closePanel()"><i class="fa-solid fa-times"></i></button>
-                        </div>
-                        <div id="panelContent" class="panel-body">
-                            <!-- Dynamic Content -->
+                        <div class="legend-content">
+                            <div class="legend-row">
+                                <span class="legend-box purple"></span>
+                                <span class="legend-label">Market Hubs</span>
+                                <span class="legend-count">4</span>
+                            </div>
+                            <div class="legend-row">
+                                <span class="legend-box orange"></span>
+                                <span class="legend-label">Whales</span>
+                                <span class="legend-count" id="activeWhalesLegend">-</span>
+                            </div>
+                            <div class="legend-row">
+                                <span class="legend-box green"></span>
+                                <span class="legend-label">Profitable</span>
+                            </div>
+                            <button class="btn btn-outline btn-sm full-width mt-2"><i class="fa-solid fa-plus"></i> Add
+                                Color</button>
                         </div>
                     </div>
                 </section>
@@ -127,83 +106,49 @@
                     <div class="pane-header">
                         <div class="tab-bar">
                             <div class="tab active" onclick="switchTab('opportunities')"><i
-                                    class="fa-solid fa-table"></i> Opportunities <span class="badge"
-                                    id="contrarianCount">0</span></div>
-                            <div class="tab" onclick="switchTab('whales')"><i class="fa-solid fa-crown"></i> Whale
-                                Leaderboard</div>
-                            <div class="tab" onclick="switchTab('news')"><i class="fa-solid fa-bolt"></i> Live Feed
-                            </div>
-                        </div>
-                        <div class="table-actions">
-                            <input type="text" class="search-input" placeholder="Search...">
+                                    class="fa-solid fa-table"></i> Data Preview</div>
+                            <div class="tab" onclick="switchTab('whales')"><i class="fa-solid fa-list"></i> Agents</div>
+                            <div class="tab" onclick="switchTab('news')"><i class="fa-solid fa-terminal"></i> Logs</div>
                         </div>
                     </div>
                     <div class="table-container">
-                        <!-- Opportunities Table -->
+                        <!-- Tables (Preserved) -->
                         <div id="view-opportunities" class="view-panel">
                             <table class="data-table">
                                 <thead>
                                     <tr>
                                         <th width="40">#</th>
-                                        <th>Market Question</th>
-                                        <th>Outcome</th>
-                                        <th>Prob %</th>
-                                        <th>Volume</th>
-                                        <th>End Date</th>
-                                        <th>Action</th>
+                                        <th>Market</th>
+                                        <th>Values</th>
+                                        <th>Tags</th>
                                     </tr>
                                 </thead>
-                                <tbody id="opportunitiesTable">
-                                    <!-- Rows injected by JS -->
-                                </tbody>
+                                <tbody id="opportunitiesTable"></tbody>
                             </table>
                         </div>
-
-                        <!-- Whale Table -->
                         <div id="view-whales" class="view-panel hidden">
                             <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th width="40">Rank</th>
-                                        <th>Wallet Address</th>
-                                        <th>Contrarian Wins</th>
-                                        <th>Win Rate</th>
-                                        <th>Total Profit</th>
-                                        <th>Strategies</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="whalesTable">
-                                    <!-- Rows injected by JS -->
-                                </tbody>
+                                <tbody id="whalesTable"></tbody>
                             </table>
                         </div>
-
-                        <!-- News Feed -->
-                        <div id="view-news" class="view-panel hidden" style="padding:0;">
-                            <div class="news-feed" id="newsFeed">
-                                <!-- News Items Injected Here -->
-                                <div class="news-placeholder">
-                                    <i class="fa-solid fa-circle-notch fa-spin"></i> Loading live feed...
-                                </div>
-                            </div>
-                        </div>
-
-                        <div id="loading" class="loading-state hidden">
-                            <i class="fa-solid fa-spinner fa-spin"></i> Loading Data...
-                        </div>
-
-                        <div id="empty-state" class="empty-state hidden">
-                            <div class="empty-icon"><i class="fa-solid fa-wind"></i></div>
-                            <h3>No Opportunities Found</h3>
-                            <p>Try adjusting your filters or check back later.</p>
+                        <div id="view-news" class="view-panel hidden">
+                            <div class="news-feed" id="newsFeed"></div>
                         </div>
                     </div>
                 </section>
             </div>
         </main>
+
+        <!-- Info Modal -->
+        <div id="info-modal" class="info-modal hidden">
+            <div class="info-content">
+                <h3>System Info</h3>
+                <p>Pipeline configuration active.</p>
+                <button class="btn btn-primary" onclick="toggleInfo()">Close</button>
+            </div>
+        </div>
     </div>
 
-    <!-- Hidden Controls for Logic Adapter -->
     <div style="display:none;">
         <input id="yesThreshold" value="0.40">
         <input id="volumeThreshold" value="10000">
