@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arānea | Data Lineage</title>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Vis.js -->
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-shell">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-top">
+                <div class="brand-icon"><i class="fa-solid fa-spider"></i></div>
+                <div class="nav-item active"><i class="fa-solid fa-share-nodes"></i></div>
+                <div class="nav-item"><i class="fa-solid fa-folder"></i></div>
+                <div class="nav-item"><i class="fa-solid fa-bell"></i></div>
+            </div>
+            <div class="sidebar-bottom">
+                <div class="nav-item"><i class="fa-solid fa-gear"></i></div>
+                <div class="user-avatar">
+                    <span>RN</span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="top-bar">
+                <div class="breadcrumbs">
+                    <span class="crumb-icon"><i class="fa-solid fa-diagram-project"></i></span>
+                    <span class="crumb">Market Analysis</span>
+                    <span class="crumb-separator">/</span>
+                    <span class="crumb highlight">Polymarket Live Lineage</span>
+                    <i class="fa-regular fa-star action-icon"></i>
+                </div>
+                <div class="actions">
+                    <div class="action-group">
+                        <span class="status-indicator online"></span>
+                        <span class="status-text target-count" id="marketCount">0 Markets</span>
+                    </div>
+                    <button class="btn btn-primary" id="refreshBtn"><i class="fa-solid fa-sync"></i> Refresh
+                        Data</button>
+                    <button class="btn btn-icon"><i class="fa-solid fa-ellipsis"></i></button>
+                </div>
+            </header>
+
+            <!-- Workspace (Split Pane) -->
+            <div class="workspace">
+                <!-- Top: Graph Canvas -->
+                <section class="graph-pane">
+                    <div class="pane-toolbar">
+                        <div class="tool-group">
+                            <button class="tool-btn active" title="Select"><i
+                                    class="fa-solid fa-arrow-pointer"></i></button>
+                            <button class="tool-btn" title="Pan"><i class="fa-solid fa-hand"></i></button>
+                            <div class="separator"></div>
+                            <button class="tool-btn" title="Layout"><i class="fa-solid fa-bezier-curve"></i></button>
+                        </div>
+                        <div class="legend">
+                            <span class="legend-item"><span class="dot whale"></span> Whale</span>
+                            <span class="legend-item"><span class="dot market"></span> Market</span>
+                        </div>
+                    </div>
+                    <div id="whale-graph" class="graph-canvas"></div>
+
+                    <!-- Floating Stats Overlay -->
+                    <div class="stats-overlay">
+                        <div class="overlay-card">
+                            <div class="card-label">Total Volume</div>
+                            <div class="card-value" id="totalVolume">-</div>
+                        </div>
+                        <div class="overlay-card">
+                            <div class="card-label">Active Whales</div>
+                            <div class="card-value" id="activeWhales">-</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Bottom: Data Grid -->
+                <section class="data-pane">
+                    <div class="pane-header">
+                        <div class="tab-bar">
+                            <div class="tab active" onclick="switchTab('opportunities')"><i
+                                    class="fa-solid fa-table"></i> Opportunities <span class="badge"
+                                    id="contrarianCount">0</span></div>
+                            <div class="tab" onclick="switchTab('whales')"><i class="fa-solid fa-crown"></i> Whale
+                                Leaderboard</div>
+                        </div>
+                        <div class="table-actions">
+                            <input type="text" class="search-input" placeholder="Search...">
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <!-- Opportunities Table -->
+                        <div id="view-opportunities" class="view-panel">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th width="40">#</th>
+                                        <th>Market Question</th>
+                                        <th>Outcome</th>
+                                        <th>Prob %</th>
+                                        <th>Volume</th>
+                                        <th>End Date</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="opportunitiesTable">
+                                    <!-- Rows injected by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Whale Table -->
+                        <div id="view-whales" class="view-panel hidden">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th width="40">Rank</th>
+                                        <th>Wallet Address</th>
+                                        <th>Contrarian Wins</th>
+                                        <th>Win Rate</th>
+                                        <th>Total Profit</th>
+                                        <th>Strategies</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="whalesTable">
+                                    <!-- Rows injected by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div id="loading" class="loading-state hidden">
+                            <i class="fa-solid fa-spinner fa-spin"></i> Loading Data...
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Hidden Controls for Logic Adapter (to keep script.js happy) -->
+    <div style="display:none;">
+        <input id="yesThreshold" value="0.40">
+        <input id="volumeThreshold" value="10000">
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
