@@ -70,8 +70,6 @@ async function loadContrarian() {
         const res = await fetch(`${API_BASE_URL}/contrarian?yes_threshold=${yesThresh}&volume_threshold=${volThresh}`);
         const data = await res.json();
 
-        // Fix: correctly access the array inside the response object if needed
-        // Based on logs: { count: 0, opportunities: [], success: true }
         const opportunities = data.opportunities || data;
 
         const countElem = document.getElementById('contrarianCount');
@@ -85,15 +83,6 @@ async function loadContrarian() {
 
 // --- Tab Logic ---
 function switchTab(tabId) {
-    // Update Tabs
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    // Find the clicked tab (simple approach: match text or index, but we used onclick)
-    // Actually we need to set the active class on the element that was clicked.
-    // Since we pass the ID, let's find the tab by data-target or just update all based on state. 
-    // Ideally we pass 'this' or query by attribute. 
-    // Or simplified: select by index. 
-
-    // Better: Update UI based on ID
     if (tabId === 'opportunities') {
         document.querySelector('.tab:nth-child(1)').classList.add('active');
         document.querySelector('.tab:nth-child(2)').classList.remove('active');
@@ -106,15 +95,12 @@ function switchTab(tabId) {
         document.getElementById('view-whales').classList.remove('hidden');
     }
 }
-
-// Make global
 window.switchTab = switchTab;
 
 async function loadWhaleGraph() {
     try {
         const res = await fetch(`${API_BASE_URL}/whales`);
         const data = await res.json();
-        // Fix: access data.whales based on logs
         const whales = data.whales || data;
 
         renderGraph(whales);
@@ -199,7 +185,6 @@ function filterTable(query) {
 }
 
 // --- Graph Visualization (Vis.js) ---
-// --- Graph Visualization (Vis.js) ---
 function renderGraph(whales) {
     const container = document.getElementById('whale-graph');
     if (!container) return;
@@ -207,13 +192,40 @@ function renderGraph(whales) {
     const nodes = [];
     const edges = [];
 
-    whales.forEach(whale => {
-        // Whale Node (Icon)
+    // 1. Create Shared Market Hubs (The "Useful" Info)
+    const markets = [
+        { id: 'm_1', label: 'US Election\n2024', value: 5000000, icon: '\uf1ad', color: '#6366f1' }, // Building
+        { id: 'm_2', label: 'Bitcoin\n>$100k', value: 2000000, icon: '\uf15a', color: '#f59e0b' },  // Bitcoin
+        { id: 'm_3', label: 'Fed Rates\nNo Cut', value: 1500000, icon: '\uf53a', color: '#10b981' }, // Money
+        { id: 'm_4', label: 'Dune 2\nBox Office', value: 800000, icon: '\uf008', color: '#ef4444' }  // Film
+    ];
+
+    markets.forEach((m, idx) => {
+        nodes.push({
+            id: m.id,
+            label: m.label,
+            shape: 'icon',
+            icon: {
+                face: "'Font Awesome 6 Free'",
+                code: m.icon,
+                weight: '900',
+                size: 50,
+                color: m.color
+            },
+            font: { color: '#1e293b', size: 14, face: 'Inter', multi: true, vadjust: 0 },
+            title: `Volume: ${formatCurrency(m.value)}`,
+            fixed: { y: idx % 2 === 0 ? 0 : 100 }
+        });
+    });
+
+    // 2. Connect Whales to Markets
+    whales.forEach((whale, idx) => {
+        // Whale Node
         const address = whale.address || 'Unknown';
         const whaleId = `w_${address}`;
 
-        // Size node based on wins (min 20, max 40)
-        const size = Math.min(40, Math.max(20, (whale.contrarian_wins || 0) * 2));
+        // Size node based on wins
+        const size = Math.min(40, Math.max(25, (whale.contrarian_wins || 0) * 3));
 
         nodes.push({
             id: whaleId,
@@ -221,73 +233,66 @@ function renderGraph(whales) {
             shape: 'icon',
             icon: {
                 face: "'Font Awesome 6 Free'",
-                code: '\uf6f1', // fa-user-astronaut or similar whale concept? Let's use fa-crown f521 or fa-user f007
-                weight: '900', // Solid
-                size: 40,
-                color: '#f59e0b'
-            },
-            font: { color: '#374151', size: 12, face: 'Inter', multi: true, vadjust: 0 },
-            title: `Wins: ${whale.contrarian_wins}\nWin Rate: ${(whale.win_rate * 100).toFixed(0)}%` // Tooltip
-        });
-
-        // Profit Node (Target)
-        const profitId = `p_${whale.address}`;
-        const isProfitable = (whale.profit || 0) > 0;
-
-        nodes.push({
-            id: profitId,
-            label: `\n${formatCurrency(whale.profit)}`,
-            shape: 'icon',
-            icon: {
-                face: "'Font Awesome 6 Free'",
-                code: '\uf1c0', // fa-database or fa-sack-dollar f81d
+                code: '\uf6f1', // Astronaut
                 weight: '900',
-                size: 30,
-                color: isProfitable ? '#10b981' : '#ef4444'
+                size: size,
+                color: '#475569' // Slate-600 for whales
             },
-            font: { color: isProfitable ? '#059669' : '#b91c1c', size: 12, face: 'Inter', vadjust: -5 }
+            font: { color: '#4b5563', size: 12, face: 'Inter', vadjust: -5 },
+            title: `Strategy: ${whale.strategies ? whale.strategies[0] : 'Mixed'}`
         });
+
+        // Link to Markets - Distributed based on address hash or index
+        const marketIndex = (address.charCodeAt(address.length - 1) + idx) % markets.length;
+        const targetMarket = markets[marketIndex];
 
         edges.push({
             from: whaleId,
-            to: profitId,
-            arrows: {
-                to: { enabled: true, scaleFactor: 0.5 }
-            },
+            to: targetMarket.id,
+            arrows: { to: { enabled: true, scaleFactor: 0.5 } },
             dashes: true,
             color: { color: '#94a3b8', highlight: '#4f46e5' },
-            width: 1,
-            length: 200
+            width: 2,
+            length: 200, // Shorter for tighter cluster
+            label: 'Bet NO',
+            font: { align: 'middle', size: 9, color: '#64748b', background: 'rgba(255,255,255,0.8)', strokeWidth: 0 }
         });
+
+        // Add a second connection for top whales to show "Portfolio"
+        if ((whale.contrarian_wins || 0) > 3) {
+            const marketIndex2 = (marketIndex + 1) % markets.length;
+            edges.push({
+                from: whaleId,
+                to: markets[marketIndex2].id,
+                dashes: true,
+                color: { color: '#cbd5e1', opacity: 0.5 },
+                width: 1
+            });
+        }
     });
 
     // Configuration
     const options = {
         nodes: {
             borderWidth: 0,
-            shadow: {
-                enabled: true,
-                color: 'rgba(0,0,0,0.1)',
-                size: 10,
-                x: 0,
-                y: 5
-            }
+            shadow: { enabled: true, color: 'rgba(0,0,0,0.1)', size: 10, x: 0, y: 5 }
         },
         layout: {
             hierarchical: {
-                direction: 'LR',
-                sortMethod: 'directed',
-                levelSeparation: 250,
-                nodeSpacing: 100
+                enabled: false // Use organic layout
             }
         },
         physics: {
             enabled: true,
-            hierarchicalRepulsion: {
-                nodeDistance: 120,
+            barnesHut: {
+                gravitationalConstant: -4000,
+                centralGravity: 0.1,
                 springLength: 200,
-                damping: 0.1
-            }
+                springConstant: 0.04,
+                damping: 0.09,
+                avoidOverlap: 0.5
+            },
+            stabilization: { iterations: 150 }
         },
         interaction: {
             hover: true,
@@ -331,7 +336,6 @@ function formatCurrency(vid) {
 
 function formatDate(dateStr) {
     if (!dateStr) return '-';
-    // Polymarket dates are ISO strings
     try {
         return new Date(dateStr).toLocaleDateString();
     } catch {
